@@ -1,0 +1,60 @@
+### Note naming conventions
+### For the Pratt Objects, expect title to be of form "Sound X"
+### For the sound AND textGrid file, expect same name (X) and same location, tested when all are in same location as script
+### For names, note that capitalization actually matters LOL
+
+### Expected for textGrid file:
+### Have 1 interval tier (or if more, specify which one contains by changing default value
+### Segment the WHOLE vowel from start to finish: code includes midpoint calculation
+
+form file info
+	word sound_file_name E
+	word sound_extension .wav
+	word textGrid_extension .TextGrid
+	comment number of tier containing vowel segments
+	natural vowel_tier 1
+endform
+clearinfo
+
+gridfile$ = "'sound_file_name$''textGrid_extension$'"
+sound_file_name_NO$ = sound_file_name$
+sound_file_name$ = "'sound_file_name$''sound_extension$'"
+sound_pratt$ = "Sound 'sound_file_name_NO$'" 
+griftfile$ = "TextGrid 'sound_file_name_NO$'"
+appendInfoLine: gridfile$
+appendInfoLine: sound_file_name$
+appendInfoLine: sound_pratt$
+appendInfoLine: griftfile$
+
+Read from file... 'sound_file_name$'
+Read from file... 'gridfile$'
+numberOfIntervals = Get number of intervals... vowel_tier
+count = 1
+
+selectObject:  sound_pratt$
+To Formant (burg)... 0.0 5.0 5500 0.025 50
+
+#NOTE PARAMETERS: change as necessary
+
+
+for interval from 1 to numberOfIntervals
+
+	if (interval mod 2 == 0)
+			selectObject: griftfile$
+			start = Get starting point... vowel_tier interval
+			end = Get end point... vowel_tier interval
+			midpoint = (start + end) / 2
+			# get the formant values at that interval
+			select Formant 'sound_file_name_NO$'
+			f1 = Get value at time... 1 midpoint Hertz Linear
+			f2 = Get value at time... 2 midpoint Hertz Linear
+			f3 = Get value at time... 3 midpoint Hertz Linear
+			appendInfoLine: "Interval #: ", interval
+			appendInfoLine: "F1 : ", f1, "F2: ", f2, "F3: ", f3
+	endif
+	if (interval mod 2 == 1)
+			appendInfoLine: 'interval'
+	endif
+endfor
+
+
