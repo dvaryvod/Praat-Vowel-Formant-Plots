@@ -7,7 +7,15 @@
 ### Have 1 interval tier (or if more, specify which one contains by changing default value
 ### Segment the WHOLE vowel from start to finish: code includes midpoint calculation
 
-form file info
+
+form Enter formants
+#	boolean Garnish 1
+	sentence IPA \ae
+	real min_F1 200
+	real max_F1 1000
+	real min_F2 200
+	real max_F2 5000
+	boolean plot1 1
 	word sound_file_name E
 	word sound_extension .wav
 	word textGrid_extension .TextGrid
@@ -15,6 +23,33 @@ form file info
 	natural vowel_tier 1
 endform
 clearinfo
+
+#CONVERT TO MELS
+#EUCLIDIAN DISTANCE 
+
+
+procedure grid
+Erase all
+Viewport... 0 6 0 4
+Line width... 1
+Font size... 12
+Times
+Black
+Plain line
+Axes... max_F2 min_F2 max_F1 min_F1
+Draw inner box
+Marks bottom... 5 yes yes yes 
+Marks left... 5 yes yes yes
+Text left... yes %F_1 (Hz)
+Text bottom... yes %F_2 (Hz)
+Axes... -max_F2 -min_F2 -max_F1 -min_F1
+endproc
+
+procedure plot
+Text special... -'f2:2' Centre -'f1:2' Half Times 12 0 'iPA$'
+endproc
+
+##GRID IS AVAILABLE TO BE CALLED LATER...PLOT MUST BE CALLED EVERY TIME THAT A NEW POINT EXISTS
 
 gridfile$ = "'sound_file_name$''textGrid_extension$'"
 sound_file_name_NO$ = sound_file_name$
@@ -36,6 +71,9 @@ To Formant (burg)... 0.0 5.0 5500 0.025 50
 
 #NOTE PARAMETERS: change as necessary
 
+if plot1 = 1
+	call grid
+endif
 
 for interval from 1 to numberOfIntervals
 
@@ -51,10 +89,12 @@ for interval from 1 to numberOfIntervals
 			f3 = Get value at time... 3 midpoint Hertz Linear
 			appendInfoLine: "Interval #: ", interval
 			appendInfoLine: "F1 : ", f1, "F2: ", f2, "F3: ", f3
+			call plot
 	endif
 	if (interval mod 2 == 1)
 			appendInfoLine: 'interval'
 	endif
 endfor
+
 
 
