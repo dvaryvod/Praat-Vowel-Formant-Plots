@@ -19,6 +19,9 @@ form Enter formants
 	real min_F2 120
 	real max_F2 1000
 	boolean plot1 1
+	comment List the file name to which output will be saved
+	comment Note that if a file by this name already exists, it will add to it rather than overwriting.
+	text filename A.csv
 	word sound_file_name E
 	word sound_extension .wav
 	word textGrid_extension .TextGrid
@@ -82,6 +85,8 @@ To Formant (burg)... 0.0 5.0 5500 0.025 50
 
 if plot1 = 1
 	call grid
+	fileappend "'filename$'" Word, f1, f2, 'newline$' 
+
 endif
 
 for interval from 1 to numberOfIntervals
@@ -99,6 +104,7 @@ for interval from 1 to numberOfIntervals
 			call mels
 			appendInfoLine: "Vowel repetition #: ", interval/2
 			appendInfoLine: "F1 : ", f1, "F2: ", f2, "F3: ", f3
+			fileappend "'filename$'" 'sound_file_name_NO$', 'f1:2', 'f2:2', 'newline$'
 			call plot
 	endif
 	if (interval mod 2 == 1)
