@@ -9,23 +9,26 @@
 
 
 form Enter formants
+	comment Note that min and max frequencies are in mels!
+	comment Select plot1 if it's the first file of multiple that you'll be plotting
+	comment Alternatively, uncheck plot1 if you want to add contents from this file to last plot
 #	boolean Garnish 1
 	sentence IPA \ae
-	real min_F1 200
-	real max_F1 1000
-	real min_F2 200
-	real max_F2 5000
+	real min_F1 120
+	real max_F1 450
+	real min_F2 120
+	real max_F2 1000
 	boolean plot1 1
 	word sound_file_name E
 	word sound_extension .wav
 	word textGrid_extension .TextGrid
-	comment number of tier containing vowel segments
+#	comment number of tier containing vowel segments
 	natural vowel_tier 1
 endform
 clearinfo
 
-#CONVERT TO MELS
 #EUCLIDIAN DISTANCE 
+#SAVE FORMANTS AS CSV FOR LATER STATS
 
 
 procedure grid
@@ -40,13 +43,19 @@ Axes... max_F2 min_F2 max_F1 min_F1
 Draw inner box
 Marks bottom... 5 yes yes yes 
 Marks left... 5 yes yes yes
-Text left... yes %F_1 (Hz)
-Text bottom... yes %F_2 (Hz)
+Text left... yes %F_1 (mels)
+Text bottom... yes %F_2 (mels)
 Axes... -max_F2 -min_F2 -max_F1 -min_F1
 endproc
 
 procedure plot
 Text special... -'f2:2' Centre -'f1:2' Half Times 12 0 'iPA$'
+endproc
+
+procedure mels
+f1 = 1127.01048*log10(1+(f1/700))
+f2 = 1127.01408*log10(1+(f2/700))
+f3 = 1127.01408*log10(1+(f3/700))
 endproc
 
 ##GRID IS AVAILABLE TO BE CALLED LATER...PLOT MUST BE CALLED EVERY TIME THAT A NEW POINT EXISTS
@@ -87,12 +96,13 @@ for interval from 1 to numberOfIntervals
 			f1 = Get value at time... 1 midpoint Hertz Linear
 			f2 = Get value at time... 2 midpoint Hertz Linear
 			f3 = Get value at time... 3 midpoint Hertz Linear
-			appendInfoLine: "Interval #: ", interval
+			call mels
+			appendInfoLine: "Vowel repetition #: ", interval/2
 			appendInfoLine: "F1 : ", f1, "F2: ", f2, "F3: ", f3
 			call plot
 	endif
 	if (interval mod 2 == 1)
-			appendInfoLine: 'interval'
+			#appendInfoLine: 'interval'
 	endif
 endfor
 
