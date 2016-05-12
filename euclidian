@@ -1,0 +1,123 @@
+### Note naming conventions
+### For the Pratt Objects, expect title to be of form "Sound X"
+### For the sound AND textGrid file, expect same name (X) and same location, tested when all are in same location as script
+### For names, note that capitalization actually matters LOL
+
+### Expected for textGrid file:
+### Have 1 interval tier (or if more, specify which one contains by changing default value
+### Segment the WHOLE vowel from start to finish: code includes midpoint calculation
+
+
+form Enter formants
+	comment Note that min and max frequencies are in mels!
+	comment Select plot1 if it's the first file of multiple that you'll be plotting
+	comment Alternatively, uncheck plot1 if you want to add contents from this file to last plot
+	sentence IPA \ae
+	real min_F1 120
+	real max_F1 450
+	real min_F2 120
+	real max_F2 1000
+#	boolean plot1 1
+#	comment List the file name to which output will be saved
+#	comment Note that if a file by this name already exists, it will add to it rather than overwriting.
+#	text filename A.csv
+	word sound_file_name E
+	word sound_extension .wav
+	word textGrid_extension .TextGrid
+#	comment number of tier containing vowel segments
+	natural vowel_tier 1
+endform
+clearinfo
+
+#EUCLIDIAN DISTANCE 
+
+procedure grid
+Erase all
+Viewport... 0 6 0 4
+Line width... 1
+Font size... 12
+Times
+Black
+Plain line
+Axes... max_F2 min_F2 max_F1 min_F1
+Draw inner box
+Marks bottom... 5 yes yes yes 
+Marks left... 5 yes yes yes
+Text left... yes %F_1 (mels)
+Text bottom... yes %F_2 (mels)
+Axes... -max_F2 -min_F2 -max_F1 -min_F1
+endproc
+
+procedure plot
+Text special... -'f2:2' Centre -'f1:2' Half Times 12 0 'iPA$'
+endproc
+
+procedure mels
+f1 = 1127.01048*log10(1+(f1/700))
+f2 = 1127.01408*log10(1+(f2/700))
+f3 = 1127.01408*log10(1+(f3/700))
+endproc
+
+##GRID IS AVAILABLE TO BE CALLED LATER...PLOT MUST BE CALLED EVERY TIME THAT A NEW POINT EXISTS
+
+gridfile$ = "'sound_file_name$''textGrid_extension$'"
+sound_file_name_NO$ = sound_file_name$
+sound_file_name$ = "'sound_file_name$''sound_extension$'"
+sound_pratt$ = "Sound 'sound_file_name_NO$'" 
+griftfile$ = "TextGrid 'sound_file_name_NO$'"
+appendInfoLine: gridfile$
+appendInfoLine: sound_file_name$
+appendInfoLine: sound_pratt$
+appendInfoLine: griftfile$
+
+Read from file... 'sound_file_name$'
+Read from file... 'gridfile$'
+numberOfIntervals = Get number of intervals... vowel_tier
+
+selectObject: griftfile$
+for interval from 1 to numberOfIntervals 
+	if (interval mod 2 == 0) 
+		start = Get start of selection
+		end = Get end of selection
+		if (start - end < 1.5) 
+			ms1500 = end 
+		else
+			ms1500 = start + 1.5
+		endif
+		ms50 = start + 0.05
+	endif
+endfor
+
+selectObject:  sound_pratt$
+To Formant (burg)... 0.0 5.0 5500 0.025 50
+
+#NOTE PARAMETERS: change as necessary
+
+if plot1 = 1
+	call grid
+	fileappend "'filename$'" Word, fms501, fms15001, fms502, fms15002, 'newline$' 
+
+endif
+
+for interval from 1 to numberOfIntervals
+
+	if (interval mod 2 == 0)
+			selectObject: griftfile$
+			start = Get starting point... vowel_tier interval
+			end = Get end point... vowel_tier interval
+			midpoint = (start + end) / 2
+			# get the formant values at that interval
+			select Formant 'sound_file_name_NO$'
+			fms501 = Get value at time... 1 ms50 Hertz Linear
+			fms502 = Get value at time... 2 ms50 Hertz Linear
+			fms15001 = Get value at time... 1 ms1500 Hertz Linear
+			fms15002 = Get value at time... 2 ms1500
+			call mels
+			appendInfoLine: "Vowel repetition #: ", interval/2
+			appendInfoLine: "F1 50 ms : ", fms501, "F1 1500 ms: ", fms15001
+			appendInfoLine: "F2 50 ms : ", fms502, "F2 1500 ms: ", fms15002
+			#fileappend "'filename$'" 'sound_file_name_NO$', 'f1:2', 'f2:2', 'newline$'
+			call plot
+	endif
+
+endfor
