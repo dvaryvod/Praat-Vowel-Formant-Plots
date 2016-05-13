@@ -2,14 +2,14 @@
 # CODE DEPENDS ON UNIQUENESS OF NAMES AND MAY NOT CHOOSE CORRECT FILE IF NOT MET
 
 form Enter title
-	word sound_file_name E
+	word sound_file_name a_11-20MP
 	word sound_extension .wav
 	word textGrid_extension .TextGrid
-	sentence IPA \ae
-	real min_F1 120
-	real max_F1 450
-	real min_F2 120
-	real max_F2 1000
+	sentence IPA C
+	real min_F1 100
+	real max_F1 600
+	real min_F2 100
+	real max_F2 900
 	boolean plot1 1
 endform
 
@@ -31,7 +31,9 @@ Axes... -max_F2 -min_F2 -max_F1 -min_F1
 endproc
 
 procedure plot
-Text special... -'f2:2' Centre -'f1:2' Half Times 12 0 'iPA$'
+Text special... -'median502' Centre -'median501' Half Times 12 0 'IPA$'
+Draw arrow... -'median502' -'median501' -'median15002' -'median15001'
+Text special... -'median15002:2' Centre -'median15001:2' Half Times 12 0 'iPA$'
 endproc
 
 procedure mels
@@ -70,6 +72,11 @@ appendInfoLine: formantName$
 averageCounter1 = 0 
 averageCounter2 = 0
 
+if plot1 == 1
+	call grid
+endif
+
+
 for number from 2 to numberOfPoints
 	if (number mod 2 == 0)
 		number2 = number
@@ -95,9 +102,9 @@ for number from 2 to numberOfPoints
 		averageCounter2 = averageCounter2 + average2
 		call mels
 		distance = sqrt( (median15002-median502)^2 + (median15001-median501)^2 )
-#		appendInfoLine: median501, " ",  median15001
-#		appendInfoLine: median502," ", median15002
-		appendInfoLine: distance
+		appendInfoLine: median501, " ",  median15001
+		appendInfoLine: median502," ", median15002
+#		appendInfoLine: distance
 		selectObject: textGridName$
 
 		call plot
@@ -110,9 +117,6 @@ averageCounter2 = averageCounter2 div (numberOfPoints div 2)
 call melsAvg 
 # appendInfoLine: averageCounter1, " ", averageCounter2 
 
-if plot1 == 1
-	call grid
-endif
 
 
 
