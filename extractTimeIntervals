@@ -1,18 +1,67 @@
+# RECOMMEND UNIQUE FILE NAMES AND ERASING ALL OBJECTS FROM PRAAT PRIOR TO START
+# CODE DEPENDS ON UNIQUENESS OF NAMES AND MAY NOT CHOOSE CORRECT FILE IF NOT MET
+
 form Enter title
-word filename E
+	word sound_file_name E
+	word sound_extension .wav
+	word textGrid_extension .TextGrid
+	sentence IPA \ae
+	real min_F1 120
+	real max_F1 450
+	real min_F2 120
+	real max_F2 1000
 endform
 
-textGridName$ = "TextGrid " + filename$ 
-writeInfoLine: textGridName$
+procedure grid
+Erase all
+Viewport... 0 6 0 4
+Line width... 1
+Font size... 12
+Times
+Black
+Plain line
+Axes... max_F2 min_F2 max_F1 min_F1
+Draw inner box
+Marks bottom... 5 yes yes yes 
+Marks left... 5 yes yes yes
+Text left... yes %F_1 (mels)
+Text bottom... yes %F_2 (mels)
+Axes... -max_F2 -min_F2 -max_F1 -min_F1
+endproc
+
+procedure plot
+Text special... -'f2:2' Centre -'f1:2' Half Times 12 0 'iPA$'
+endproc
+
+procedure mels
+f1 = 1127.01048*log10(1+(f1/700))
+f2 = 1127.01408*log10(1+(f2/700))
+f3 = 1127.01408*log10(1+(f3/700))
+endproc
+
+# Open sound file and open grid file 
+
+textGridName$ = "TextGrid " + sound_file_name$ 
+fullTextName$ = "'sound_file_name$''textGrid_extension$'"
+fullFileName$ = "'sound_file_name$''sound_extension$'"
+writeInfoLine: fullFileName$
+
+Read from file... 'fullFileName$'
+To Formant (burg)... 0 5 5500 0.025 50
+Read from file... 'fullTextName$'
 selectObject: textGridName$
+
 
 numberOfPoints = Get number of intervals... 1
 writeInfoLine: "Starting to extract formant frequencies"
 
 #1st argument for Get starting point is vowel tier, change as necessary
 
-formantName$ = "Formant " + filename$
+formantName$ = "Formant " + sound_file_name$
 appendInfoLine: formantName$
+
+averageCounter1 = 0 
+averageCounter2 = 0
 
 for number from 2 to numberOfPoints
 	if (number mod 2 == 0)
@@ -33,9 +82,20 @@ for number from 2 to numberOfPoints
 		median502 = Get quantile... 2 start end50 "Hertz" 0.5
 		median15001 = Get quantile... 1 start end1500 "Hertz" 0.5
 		median15002 = Get quantile... 2 start end1500 "Hertz" 0.5
-		appendInfoLine: median501, " ",  median15001
-		appendInfoLine: median502," ", median15002
+		average1 = Get mean... 1 start end Hertz
+		average2 = Get mean... 2 start end Hertz
+		averageCounter1 = averageCounter1 + average1
+		averageCounter2 = averageCounter2 + average2
+		distance = sqrt( (median15002-median502)^2 + (median15001-median501)^2 )
+#		appendInfoLine: median501, " ",  median15001
+#		appendInfoLine: median502," ", median15002
+#		appendInfoLine: distance
 		selectObject: textGridName$
 		
 	endif
 endfor
+
+averageCounter1 = averageCounter1 div (numberOfPoints div 2)
+averageCounter2 = averageCounter2 div (numberOfPoints div 2) 
+# appendInfoLine: averageCounter1, " ", averageCounter2 
+
