@@ -14,24 +14,28 @@ writeInfoLine: "Starting to extract formant frequencies"
 formantName$ = "Formant " + filename$
 appendInfoLine: formantName$
 
-#TOFIX
-#LOGIC PROBLEM IN FOR LOOP: prints intervals in order rather than skipping empties
-
 for number from 2 to numberOfPoints
 	if (number mod 2 == 0)
-		number2 = number div 2
+		number2 = number
+		#number2 = number div 2
 		start = Get starting point... 1 number2
 		end = Get end point... 1 number2
 		selectObject: formantName$ 
 		
-		median501 = Get quantile... 1 start start+0.05 "Hertz" 0.5
-		median502 = Get quantile... 2 start start+0.05 "Hertz" 0.5
-		median15001 = Get quantile... 1 start start+1.5 "Hertz" 0.5
-		median15002 = Get quantile... 2 start start+1.5 "Hertz" 0.5
+		end50 = start + 0.05
+		if (end-start > 1.5)
+			end1500 = start + 1.5
+		else
+			end1500 = end
+		endif
+
+		median501 = Get quantile... 1 start end50 "Hertz" 0.5
+		median502 = Get quantile... 2 start end50 "Hertz" 0.5
+		median15001 = Get quantile... 1 start end1500 "Hertz" 0.5
+		median15002 = Get quantile... 2 start end1500 "Hertz" 0.5
 		appendInfoLine: median501, " ",  median15001
 		appendInfoLine: median502," ", median15002
 		selectObject: textGridName$
 		
-
 	endif
 endfor
