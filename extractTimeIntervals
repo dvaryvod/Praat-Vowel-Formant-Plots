@@ -2,10 +2,10 @@
 # CODE DEPENDS ON UNIQUENESS OF NAMES AND MAY NOT CHOOSE CORRECT FILE IF NOT MET
 
 form Enter title
-	word sound_file_name a_11-20MP
+	word speaker S1
 	word sound_extension .wav
 	word textGrid_extension .TextGrid
-	sentence IPA C
+	sentence IPA S
 	real min_F1 100
 	real max_F1 600
 	real min_F2 100
@@ -30,6 +30,12 @@ Text bottom... yes %F_2 (mels)
 Axes... -max_F2 -min_F2 -max_F1 -min_F1
 endproc
 
+if plot1 == 1
+	call grid
+endif
+
+writeInfoLine: "Starting"
+
 procedure plot
 Text special... -'median502' Centre -'median501' Half Times 12 0 'IPA$'
 Draw arrow... -'median502' -'median501' -'median15002' -'median15001'
@@ -48,74 +54,89 @@ averageCounter1 = 1127.01048*log10(1+(averageCounter1/700))
 averageCounter2 = 1127.01048*log10(1+(averageCounter2/700))
 endproc
 
-# Open sound file and open grid file 
-
-textGridName$ = "TextGrid " + sound_file_name$ 
-fullTextName$ = "'sound_file_name$''textGrid_extension$'"
-fullFileName$ = "'sound_file_name$''sound_extension$'"
-writeInfoLine: fullFileName$
+procedure calculation
 
 Read from file... 'fullFileName$'
 To Formant (burg)... 0 5 5500 0.025 50
 Read from file... 'fullTextName$'
+
 selectObject: textGridName$
-
-
 numberOfPoints = Get number of intervals... 1
-writeInfoLine: "Starting to extract formant frequencies"
+appendInfoLine: "Starting to extract formant frequencies"
 
-#1st argument for Get starting point is vowel tier, change as necessary
-
-formantName$ = "Formant " + sound_file_name$
 appendInfoLine: formantName$
 
-averageCounter1 = 0 
-averageCounter2 = 0
+		averageCounter1 = 0 
+		averageCounter2 = 0
 
-if plot1 == 1
-	call grid
-endif
-
-
-for number from 2 to numberOfPoints
-	if (number mod 2 == 0)
-		number2 = number
-		#number2 = number div 2
-		start = Get starting point... 1 number2
-		end = Get end point... 1 number2
-		selectObject: formantName$ 
 		
-		end50 = start + 0.05
-		if (end-start > 1.5)
-			end1500 = start + 1.5
-		else
-			end1500 = end
-		endif
-
-		median501 = Get quantile... 1 start end50 "Hertz" 0.5
-		median502 = Get quantile... 2 start end50 "Hertz" 0.5
-		median15001 = Get quantile... 1 start end1500 "Hertz" 0.5
-		median15002 = Get quantile... 2 start end1500 "Hertz" 0.5
-		average1 = Get mean... 1 start end Hertz
-		average2 = Get mean... 2 start end Hertz
-		averageCounter1 = averageCounter1 + average1
-		averageCounter2 = averageCounter2 + average2
-		call mels
-		distance = sqrt( (median15002-median502)^2 + (median15001-median501)^2 )
-		appendInfoLine: median501, " ",  median15001
-		appendInfoLine: median502," ", median15002
-#		appendInfoLine: distance
-		selectObject: textGridName$
-
-		call plot
+		for number from 2 to numberOfPoints
+			if (number mod 2 == 0)
+				number2 = number
+				appendInfoLine: number2
+				start = Get starting point... 1 number2
+				end = Get end point... 1 number2
+				selectObject: formantName$ 
 		
-	endif
-endfor
+				end50 = start + 0.05
+				if (end-start > 1.5)
+					end1500 = start + 1.5
+				else
+					end1500 = end
+				endif
 
-averageCounter1 = averageCounter1 div (numberOfPoints div 2)
-averageCounter2 = averageCounter2 div (numberOfPoints div 2)
-call melsAvg 
-# appendInfoLine: averageCounter1, " ", averageCounter2 
+				median501 = Get quantile... 1 start end50 "Hertz" 0.5
+				median502 = Get quantile... 2 start end50 "Hertz" 0.5
+				median15001 = Get quantile... 1 start end1500 "Hertz" 0.5
+				median15002 = Get quantile... 2 start end1500 "Hertz" 0.5
+				average1 = Get mean... 1 start end Hertz
+				average2 = Get mean... 2 start end Hertz
+				averageCounter1 = averageCounter1 + average1
+				averageCounter2 = averageCounter2 + average2
+				call mels
+				distance = sqrt( (median15002-median502)^2 + (median15001-median501)^2 )
+				appendInfoLine: median501, " ",  median15001
+				appendInfoLine: median502," ", median15002
+				selectObject: textGridName$
+
+				call plot
+		
+			endif
+		endfor
+
+		averageCounter1 = averageCounter1 div (numberOfPoints div 2)
+		averageCounter2 = averageCounter2 div (numberOfPoints div 2)
+		call melsAvg 
+
+		selectObject: formantName$, removeSound$, textGridName$
+		Remove
+endproc
+
+
+# Open sound file and open grid file
+# There are two files for each speaker
+
+
+textGridName$ = "TextGrid a_1-10" + speaker$
+removeSound$ = "Sound a_1-10" + speaker$
+fullTextName$ = "a_1-10" + speaker$ + textGrid_extension$
+fullFileName$ = "a_1-10" + speaker$ + sound_extension$
+appendInfoLine: fullFileName$
+formantName$ = "Formant a_1-10" + speaker$
+		
+call calculation
+		
+textGridName$ = "TextGrid a_11-20" + speaker$
+removeSound$ = "Sound a_11-20" + speaker$
+fullTextName$ = "a_11-20" + speaker$ + textGrid_extension$
+fullFileName$ = "a_11-20" + speaker$ + sound_extension$
+formantName$ = "Formant a_11-20" + speaker$
+appendInfoLine: fullFileName$
+
+call calculation
+
+pictureName$ = speaker$ + ".png"
+Save as 600-dpi PNG file... 'pictureName$'
 
 
 
