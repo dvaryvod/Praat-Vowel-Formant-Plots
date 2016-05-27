@@ -1,0 +1,157 @@
+# RECOMMEND UNIQUE FILE NAMES AND ERASING ALL OBJECTS FROM PRAAT PRIOR TO START
+# CODE DEPENDS ON UNIQUENESS OF NAMES AND MAY NOT CHOOSE CORRECT FILE IF NOT MET
+
+form Enter title
+	word sound_extension .wav
+	word textGrid_extension .TextGrid
+	word filename trajectories.csv
+	word filenameMins minsTrajectories.csv
+endform
+
+fileappend "'filename$'" Speaker, OverallMed1, OverallMed2, FirstMed1, FirstMed2, FirstDistance, SecondMed1, SecondMed2, SecondDistance, ThirdMed1, ThirdMed2, ThirdDistance, FourthMed1, FourthMed2, FourthDistance, FifthMed1, FifthMed2, FifthDistance, SixthMed1, SixthMed2, SixthDistance, SeventhMed1, SeventhMed2, SeventhDistance, EighthMed1, EightMed2, EighthDistance, NinthMed1, NinthMed2, NinthDistance, TenthMed1, TenthMed2, TenthDistance, EleventhMed1, EleventhMed2, EleventhDistance, TwelvthMed1, TwelvthMed2, TwelvthDistance,'newline$'
+fileappend "'filenameMins$'" Speaker, TimeOfMinStart, Length, MinDistance, Ratio, 'newline$'
+writeInfoLine: "Starting"
+
+procedure calculation
+
+Read from file... 'fullFileName$'
+To Formant (burg)... 0 5 5500 0.025 50
+Read from file... 'fullTextName$'
+
+selectObject: textGridName$
+numberOfPoints = Get number of intervals... 1
+appendInfoLine: "Starting to extract formant frequencies"
+	
+		for interval from 2 to numberOfPoints
+			if (interval mod 2 == 0)
+				appendInfoLine: "Vowel production number ", interval
+				start = Get starting point... 1 interval
+				end = Get end point... 1 interval
+				#appendInfoLine: "start ", start, " end ", end
+				selectObject: formantName$ 
+
+				targetMedian1 = Get quantile... 1 start end Hertz 0.5
+				targetMedian2 = Get quantile... 2 start end Hertz 0.5
+
+				#Set defaults for the minimum that will be changed in the part of code following
+				minDistance = 99999
+				minTime = 99999
+				
+				if (control ==1)
+					letter$ = "C"
+					fileappend "'filename$'" 'letter$', 'targetMedian1', 'targetMedian2',
+					fileappend "'filenameMins$'" 'letter$', 
+				else
+					letter$ = "S"
+					fileappend "'filename$'" 'letter$',
+					fileappend "'filenameMins$'" 'letter$', 
+				endif
+
+				step1 = start
+				# stop is the number of trials you can have
+				stop = ((end-start) div 0.05) 
+				step2 = start + 0.05
+				for number from 1 to stop
+					#appendInfoLine: "1 ", step1, " 2 ", step2
+					median1Step = Get quantile... 1 step1 step2 Hertz 0.5
+					median2Step = Get quantile... 2 step1 step2 Hertz 0.5
+					distanceAtStep = sqrt ( (targetMedian1 - median1Step)^2 + (targetMedian2 - median2Step)^2 )
+					fileappend "'filename$'" 'median1Step:2', 'median2Step:2', 'distanceAtStep:2', 
+					if (distanceAtStep < minDistance) 
+						minDistance = distanceAtStep
+						minTime = step1-start
+						length = end-start
+						ratio = minTime/(end-start) 
+					endif
+					step1 = step2
+					step2 = step2 + 0.05
+				endfor
+				
+				#at this point we have iterated through all of the full intervals of 0.05
+				#but there is still a leftover last interval less than 0.05 to the end
+				#I'M EXCLUDING IT 
+				
+				fileappend "'filename$'" 'newline$'
+				fileappend "'filenameMins$'" 'minTime', 'length', 'minDistance', 'ratio', 'newline$'
+
+				selectObject: textGridName$
+				
+			endif
+		endfor
+endproc
+
+
+# Open sound file and open grid file
+# There are two files for each speaker
+
+procedure plotOne
+
+textGridName$ = "TextGrid a_1-10" + speaker$
+removeSound$ = "Sound a_1-10" + speaker$
+fullTextName$ = "a_1-10" + speaker$ + textGrid_extension$
+fullFileName$ = "a_1-10" + speaker$ + sound_extension$
+appendInfoLine: fullFileName$
+formantName$ = "Formant a_1-10" + speaker$
+		
+call calculation
+		
+textGridName$ = "TextGrid a_11-20" + speaker$
+removeSound$ = "Sound a_11-20" + speaker$
+fullTextName$ = "a_11-20" + speaker$ + textGrid_extension$
+fullFileName$ = "a_11-20" + speaker$ + sound_extension$
+formantName$ = "Formant a_11-20" + speaker$
+appendInfoLine: fullFileName$
+
+call calculation
+endproc
+
+control = 0
+#speaker$ = "S1"
+#call plotOne
+speaker$ = "S2"
+call plotOne
+speaker$ = "S3"
+call plotOne
+speaker$ = "S4"
+call plotOne
+speaker$ = "S5"
+call plotOne
+speaker$ = "S6"
+call plotOne
+speaker$ = "S7"
+call plotOne
+speaker$ = "S8"
+call plotOne
+speaker$ = "S9"
+call plotOne
+speaker$ = "S10"
+call plotOne
+speaker$ = "S11"
+call plotOne
+
+
+control = 1
+speaker$ = "C1"
+call plotOne
+speaker$ = "C2"
+call plotOne
+speaker$ = "C3"
+call plotOne
+speaker$ = "C4"
+call plotOne
+speaker$ = "C5"
+call plotOne
+speaker$ = "C6"
+call plotOne
+speaker$ = "C7"
+call plotOne
+speaker$ = "C8"
+call plotOne
+speaker$ = "C9"
+call plotOne
+speaker$ = "C10"
+call plotOne
+speaker$ = "C11"
+call plotOne
+
+

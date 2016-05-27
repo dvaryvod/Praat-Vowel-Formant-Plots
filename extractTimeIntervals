@@ -2,15 +2,17 @@
 # CODE DEPENDS ON UNIQUENESS OF NAMES AND MAY NOT CHOOSE CORRECT FILE IF NOT MET
 
 form Enter title
-	word speaker S1
+	#word speaker C2
 	word sound_extension .wav
 	word textGrid_extension .TextGrid
+	word filename waste.csv
 	sentence IPA S
 	real min_F1 100
 	real max_F1 600
 	real min_F2 100
 	real max_F2 900
 	boolean plot1 1
+	#boolean control 1
 endform
 
 procedure grid
@@ -32,14 +34,23 @@ endproc
 
 if plot1 == 1
 	call grid
+	fileappend "'filename$'" Speaker, Distance, First50F1, First50F2, OverallF1, OverallF2, MeanF1, MeanF2, meanFirst1, meanFirst2, medianFirst1, medianFirst2, meanMiddle1, meanMiddle2, medianMiddle1, medianMiddle2, distanceInitial, distanceMiddle, centering, distanceFromPerfInitial, distanceFromPerfLate, median503, median15003, average3, median504, median15004, average4, distance3D, 'newline$'
 endif
 
 writeInfoLine: "Starting"
 
-procedure plot
-Text special... -'median502' Centre -'median501' Half Times 12 0 'IPA$'
+procedure plotControl
+Pink
+Text special... -'median502' Centre -'median501' Half Times 12 0 C
 Draw arrow... -'median502' -'median501' -'median15002' -'median15001'
-Text special... -'median15002:2' Centre -'median15001:2' Half Times 12 0 'iPA$'
+Text special... -'median15002:2' Centre -'median15001:2' Half Times 12 0 C
+endproc
+
+procedure plotStutter
+Black
+Text special... -'median502' Centre -'median501' Half Times 12 0 S
+Draw arrow... -'median502' -'median501' -'median15002' -'median15001'
+Text special... -'median15002:2' Centre -'median15001:2' Half Times 12 0 S
 endproc
 
 procedure mels
@@ -49,10 +60,6 @@ median15001 = 1127.01408*log10(1+(median15001/700))
 median15002 = 1127.01408*log10(1+(median15002/700))
 endproc
 
-procedure melsAvg 
-averageCounter1 = 1127.01048*log10(1+(averageCounter1/700))
-averageCounter2 = 1127.01048*log10(1+(averageCounter2/700))
-endproc
 
 procedure calculation
 
@@ -91,31 +98,103 @@ appendInfoLine: formantName$
 				median15002 = Get quantile... 2 start end1500 "Hertz" 0.5
 				average1 = Get mean... 1 start end Hertz
 				average2 = Get mean... 2 start end Hertz
+
+				average1 = 1127.01048*log10(1+(average1/700))
+				average2 = 1127.01048*log10(1+(average2/700))
 				averageCounter1 = averageCounter1 + average1
 				averageCounter2 = averageCounter2 + average2
+
 				call mels
 				distance = sqrt( (median15002-median502)^2 + (median15001-median501)^2 )
-				appendInfoLine: median501, " ",  median15001
-				appendInfoLine: median502," ", median15002
-				selectObject: textGridName$
+				
+				#Based on College of Sante Fe					# http://www.feilding.net/sfuad/musi3012-01/html/lectures/017_instruments_IV.htm
 
-				call plot
+				first = 1127.01048*log10(1+(1000/700))
+				second = 1127.01048*log10(1+(2300/700))
+				distanceFromPerfInitial = sqrt((median501-first)^2 + (median502-second)^2)
+				distanceFromPerfLate = sqrt((median15001-first)^2+(median15002-second)^2)
+
+				
+				#For replicating distance calculations
+				quarterTime = end div 4
+				firstQuartile = quarterTime
+				thirdQuartile = quarterTime * 3
+
+				meanFirst1 = Get mean... 1 start end50 Hertz
+				meanFirst2 = Get mean... 2 start end50 Hertz
+				medianFirst1 = median501
+				medianFirst2 = median502
+
+				meanMiddle1 = Get mean... 1 firstQuartile thirdQuartile Hertz
+				meanMiddle2 = Get mean... 2 firstQuartile thirdQuartile Hertz
+				medianMiddle1 = Get quantile... 1 firstQuartile thirdQuartile "Hertz" 0.5
+				medianMiddle2 = Get quantile... 2 firstQuartile thirdQuartile "Hertz" 0.5
+
+				meanFirst1 = 1127.01048*log10(1+(meanFirst1/700))
+				meanFirst2 = 1127.01048*log10(1+(meanFirst2/700))
+				meanMiddle1 = 1127.01048*log10(1+(meanMiddle1/700))
+				meanMiddle2 = 1127.01048*log10(1+(meanMiddle2/700))
+				medianMiddle1 = 1127.01048*log10(1+(medianMiddle1/700))
+				medianMiddle2 = 1127.01048*log10(1+(medianMiddle2/700))
+
+				call replicateCentering
+
+				median503 = Get quantile... 3 start end50 "Hertz" 0.5
+				median504 = Get quantile... 4 start end50 "Hertz" 0.5
+				median15003 = Get quantile... 3 start end1500 "Hertz" 0.5
+				median15004 = Get quantile... 4 start end1500 "Hertz" 0.5
+				average3 = Get mean... 3 start end Hertz
+				average4 = Get mean... 4 start end Hertz
+
+
+				average3 = 1127.01048*log10(1+(average3/700))
+				average4 = 1127.01048*log10(1+(average4/700))
+				median503 = 1127.01048*log10(1+(median503/700))
+				median504 = 1127.01048*log10(1+(median504/700))
+				median15003 = 1127.01048*log10(1+(median15003/700))
+				median15004 = 1127.01048*log10(1+(median15004/700))
+
+				distance3D = sqrt ( (median15001-median501)^2 + (median15002-median502)^2 + (median15003-median503)^2)
+
+				if control = 0
+					letter$ = "S"
+				elsif control = 1
+					letter$ = "C"
+				endif
+		
+				fileappend "'filename$'" 'letter$', 'distance:2', 'median501:2', 'median502:2', 'median15001:2', 'median15002:2', 'average1:2', 'average2:2', 'meanFirst1:2', 'meanFirst2:2', 'medianFirst1:2', 'medianFirst2:2', 'meanMiddle1:2', 'meanMiddle2:2', 'medianMiddle1:2', 'medianMiddle2:2', 'distanceInitial:2', 'distanceMiddle:2', 'centering:2', 'distanceFromPerfInitial:2', 'distanceFromPerfLate:2', 'median503:2', 'median15003:2', 'average3:2', 'median504:2', 'median15004:2', 'average4:2', 'distance3D:2', 'newline$'
+				selectObject: textGridName$
+				
+				if control == 1
+					call plotControl
+				elsif control == 0
+					call plotStutter
+				endif
 		
 			endif
 		endfor
 
 		averageCounter1 = averageCounter1 div (numberOfPoints div 2)
 		averageCounter2 = averageCounter2 div (numberOfPoints div 2)
-		call melsAvg 
 
-		selectObject: formantName$, removeSound$, textGridName$
-		Remove
+		#selectObject: formantName$, removeSound$, textGridName$
+		#Remove
+endproc
+
+procedure replicateCentering
+
+distanceInitial = sqrt((meanFirst1 - medianFirst1)^2 + (meanFirst2 - medianFirst2)^2)
+distanceMiddle = sqrt( (meanMiddle1 - medianMiddle1)^2 + (meanMiddle2 - medianMiddle2)^2)
+centering = distanceInitial - distanceMiddle 
+#Positive centering = larger initial distance to mean, movement toward median 
+
 endproc
 
 
 # Open sound file and open grid file
 # There are two files for each speaker
 
+procedure plotOne
 
 textGridName$ = "TextGrid a_1-10" + speaker$
 removeSound$ = "Sound a_1-10" + speaker$
@@ -138,7 +217,55 @@ call calculation
 pictureName$ = speaker$ + ".png"
 Save as 600-dpi PNG file... 'pictureName$'
 
+endproc
+
+control = 0
+#speaker$ = "S1"
+#call plotOne
+speaker$ = "S2"
+call plotOne
+speaker$ = "S3"
+#call plotOne
+speaker$ = "S4"
+#call plotOne
+speaker$ = "S5"
+#call plotOne
+speaker$ = "S6"
+#call plotOne
+speaker$ = "S7"
+#call plotOne
+speaker$ = "S8"
+#call plotOne
+speaker$ = "S9"
+#call plotOne
+speaker$ = "S10"
+#call plotOne
+speaker$ = "S11"
+#call plotOne
 
 
+control = 1
+speaker$ = "C1"
+#call plotOne
+speaker$ = "C2"
+#call plotOne
+speaker$ = "C3"
+#call plotOne
+speaker$ = "C4"
+#call plotOne
+speaker$ = "C5"
+#call plotOne
+speaker$ = "C6"
+#call plotOne
+speaker$ = "C7"
+#call plotOne
+speaker$ = "C8"
+#call plotOne
+speaker$ = "C9"
+#call plotOne
+speaker$ = "C10"
+#call plotOne
+speaker$ = "C11"
+#call plotOne
 
 
